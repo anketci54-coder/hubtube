@@ -35,6 +35,20 @@ Snapshot SQLite'a kaydedilir; sonraki çalışmada yalnız eklenen, değiştiril
 dosyalar sınıflandırılır ve bunlara bağlı etki bağlamı raporlanır. Aynı snapshot yeniden
 gözlemlenirse `REPO_CHANGED=false` üretilir.
 
+## Need Graph v1
+
+Observer snapshot'ından deterministik ve kanıtlı ihtiyaç önerileri üretin:
+
+```powershell
+python -m radar --db work\radar.db needs propose --repo-key tokenoskobi
+python -m radar --db work\radar.db needs approve PROPOSAL_ID --approved-by anketci54-coder
+python -m radar --db work\radar.db needs list --repo-key tokenoskobi
+```
+
+Öneriler otomatik olarak aktifleşmez. Her ihtiyaç insan onayı, kaynak snapshot kimliği,
+deterministik kural ve kanıt kaydı taşır. Kritik ihtiyaçlar sonraki sürümlerde sessizce
+silinemez veya otomatik olarak düşük önceliğe indirilemez.
+
 Gerçek GitHub taramasından önce `config.example.toml` dosyasını `config.toml` olarak
 kopyalayın ve iki repository değerini doldurun. Token gerekiyorsa yalnız ortam
 değişkeninden verilmelidir; yapılandırma veya veritabanına yazılmamalıdır.

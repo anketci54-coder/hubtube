@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sqlite3
 import sys
 import tempfile
@@ -8,6 +9,7 @@ from pathlib import Path
 
 from .core import connect, initialize, stable_hash, transition_candidate, utc_now
 from .observer import observe_repository, persist_snapshot, write_snapshot
+from .needs import approve_need_proposal, list_needs, propose_needs
 from .report import render_daily_report
 
 
@@ -31,6 +33,15 @@ def build_parser() -> argparse.ArgumentParser:
     observe.add_argument("--output", type=Path)
     observe.add_argument("--repo-key")
     observe.add_argument("--full-name")
+    needs = sub.add_parser("needs")
+    needs_sub = needs.add_subparsers(dest="needs_command", required=True)
+    needs_propose = needs_sub.add_parser("propose")
+    needs_propose.add_argument("--repo-key", required=True)
+    needs_list = needs_sub.add_parser("list")
+    needs_list.add_argument("--repo-key", required=True)
+    needs_approve = needs_sub.add_parser("approve")
+    needs_approve.add_argument("proposal_id")
+    needs_approve.add_argument("--approved-by", required=True)
     return parser
 
 
@@ -118,6 +129,24 @@ def main(argv: list[str] | None = None) -> int:
         print(f"CHANGES={len(result['changes'])}")
         print(f"IMPACTED_CONTEXT={len(result['impacted_context'])}")
         return 0
+
+    if args.command == "needs":
+        connection = connect(args.db)
+        initialize(connection, SCHEMA_PATH)
+        if args.needs_command == "propose":
+            proposals = propose_needs(connection, args.repo_key)
+            print(json.dumps(proposals, ensure_ascii=False, indent=2))
+            print(f"PROPOSALS={len(proposals)}")
+            return 0
+        if args.needs_command == "list":
+            needs = list_needs(connection, args.repo_key)
+            print(json.dumps(needs, ensure_ascii=False, indent=2))
+            print(f"ACTIVE_NEEDS={len(needs)}")
+            return 0
+        if args.needs_command == "approve":
+            need = approve_need_proposal(connection, args.proposal_id, args.approved_by)
+            print(json.dumps(need, ensure_ascii=False, indent=2))
+            return 0
 
     connection = connect(args.db)
     if args.command == "init":
