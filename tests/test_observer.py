@@ -33,6 +33,35 @@ class ObserverTests(unittest.TestCase):
             second = observe_repository(root)["snapshot_hash"]
         self.assertEqual(first, second)
 
+    def test_duplicate_import_edges_are_deduplicated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "app.py").write_text("import json\nimport json\n", encoding="utf-8")
+            snapshot = observe_repository(root)
+        json_edges = [edge for edge in snapshot["edges"] if edge["target"] == "json"]
+        self.assertEqual(1, len(json_edges))
+
+    def test_public_certificate_is_not_sensitive_but_private_key_is(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "root-cert.pem").write_text(
+                "-----BEGIN CERTIFICATE-----\npublic\n", encoding="utf-8"
+            )
+            (root / "signing.pem").write_text(
+                "-----BEGIN PRIVATE KEY-----\nsecret\n", encoding="utf-8"
+            )
+            snapshot = observe_repository(root)
+        records = {item["path"]: item for item in snapshot["files"]}
+        self.assertFalse(records["root-cert.pem"]["sensitive"])
+        self.assertTrue(records["signing.pem"]["sensitive"])
+
+    def test_data_files_are_not_counted_as_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "events.jsonl").write_text("{}\n", encoding="utf-8")
+            snapshot = observe_repository(root)
+        self.assertEqual({"data": 1}, snapshot["classification_counts"])
+
     def test_persists_and_diffs_incremental_snapshots(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
