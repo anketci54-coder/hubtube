@@ -13,6 +13,7 @@ Bu sürüm mimari sözleşmeyi dondurur ve aşağıdaki temelleri sağlar:
 - politika kapıları için kayıt modeli
 - impact ve confidence skorlarının ayrı tutulması
 - boş sonuçları da destekleyen günlük Markdown raporu
+- salt-okunur Repository Observer v1
 
 ## Hızlı başlangıç
 
@@ -22,7 +23,12 @@ Python 3.11 veya üzeri yeterlidir; harici paket gerekmez.
 python -m radar --db work/radar.db init
 python -m radar --db work/radar.db self-test
 python -m radar --db work/radar.db report --date 2026-08-01 --output work/daily-report.md
+python -m radar observe C:\path\to\repository --output work\snapshot.json
 ```
+
+Observer yalnız dosya okur; kod çalıştırmaz ve paket kurmaz. `.git`, sanal ortamlar,
+`node_modules` ve cache dizinlerini atlar. Dosya hash'leri, sınıflandırma, hassas dosya
+işaretleri ve Python import ilişkileri üretir. Hassas dosyaların içeriği çıktıya yazılmaz.
 
 Gerçek GitHub taramasından önce `config.example.toml` dosyasını `config.toml` olarak
 kopyalayın ve iki repository değerini doldurun. Token gerekiyorsa yalnız ortam
@@ -41,3 +47,7 @@ doğrulandıktan sonra GitHub istemcisi eklenmelidir. Hiçbir komut hedef repola
 - `docs/TECHNICAL_SPEC_v1.md`: dondurulmuş uygulama sözleşmesi
 - `schema/001_initial.sql`: SQLite veri modeli ve invariant trigger'ları
 - `config.example.toml`: çalışma politikası örneği
+
+## Lisans
+
+MIT
