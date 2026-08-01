@@ -93,7 +93,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "scan-github":
         print(
-            "scan-github henÃ¼z etkin deÄŸil: doÄŸrulanmÄ±ÅŸ repo adresleri ve GitHub istemcisi gerekli.",
+            "scan-github henüz etkin değil: doğrulanmış repo adresleri ve GitHub istemcisi gerekli.",
             file=sys.stderr,
         )
         return 2
