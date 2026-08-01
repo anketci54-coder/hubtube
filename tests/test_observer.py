@@ -2,7 +2,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from radar.observer import observe_repository
+from radar.core import connect, initialize
+from radar.observer import observe_repository, persist_snapshot
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class ObserverTests(unittest.TestCase):
@@ -28,6 +32,36 @@ class ObserverTests(unittest.TestCase):
             first = observe_repository(root)["snapshot_hash"]
             second = observe_repository(root)["snapshot_hash"]
         self.assertEqual(first, second)
+
+    def test_persists_and_diffs_incremental_snapshots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            db = connect(root / "radar.db")
+            initialize(db, ROOT / "schema")
+            source = root / "repo"
+            source.mkdir()
+            (source / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
+            first = persist_snapshot(
+                db, repo_key="demo", full_name="owner/demo", snapshot=observe_repository(source)
+            )
+            self.assertTrue(first["changed"])
+
+            unchanged = persist_snapshot(
+                db, repo_key="demo", full_name="owner/demo", snapshot=observe_repository(source)
+            )
+            self.assertFalse(unchanged["changed"])
+
+            (source / "app.py").write_text("VALUE = 2\n", encoding="utf-8")
+            (source / "test_app.py").write_text("import app\n", encoding="utf-8")
+            second = persist_snapshot(
+                db, repo_key="demo", full_name="owner/demo", snapshot=observe_repository(source)
+            )
+            kinds = {(item["path"], item["change_type"]) for item in second["changes"]}
+            self.assertIn(("app.py", "MODIFIED"), kinds)
+            self.assertIn(("test_app.py", "ADDED"), kinds)
+            impacted = {item["path"] for item in second["impacted_context"]}
+            self.assertIn("test_app.py", impacted)
+            db.close()
 
 
 if __name__ == "__main__":
