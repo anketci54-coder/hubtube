@@ -16,6 +16,7 @@ SKIP_DIRECTORIES = {
 }
 SENSITIVE_NAMES = {".env", "id_rsa", "id_ed25519", "credentials.json", "secrets.json"}
 SENSITIVE_SUFFIXES = {".key", ".pem", ".p12", ".pfx"}
+DATA_SUFFIXES = {".json", ".jsonl", ".csv", ".tsv", ".db", ".sqlite", ".parquet", ".jpeg", ".jpg", ".png"}
 TEST_MARKERS = {"test", "tests", "spec", "specs"}
 CONFIG_NAMES = {
     "cargo.toml", "cargo.lock", "pyproject.toml", "requirements.txt",
@@ -48,15 +49,29 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _is_sensitive(relative: Path) -> bool:
+def _is_sensitive(path: Path, relative: Path) -> bool:
     lowered = relative.name.lower()
-    return lowered in SENSITIVE_NAMES or relative.suffix.lower() in SENSITIVE_SUFFIXES
+    if lowered in SENSITIVE_NAMES:
+        return True
+    suffix = relative.suffix.lower()
+    if suffix not in SENSITIVE_SUFFIXES:
+        return False
+    if suffix == ".pem":
+        try:
+            header = path.read_bytes()[:256]
+        except OSError:
+            return True
+        if b"PRIVATE KEY" in header:
+            return True
+        if b"CERTIFICATE" in header:
+            return False
+    return True
 
 
-def _classify(relative: Path) -> str:
+def _classify(path: Path, relative: Path) -> str:
     lowered_parts = {part.lower() for part in relative.parts}
     lowered_name = relative.name.lower()
-    if _is_sensitive(relative):
+    if _is_sensitive(path, relative):
         return "sensitive"
     if lowered_parts & TEST_MARKERS or lowered_name.startswith("test_") or lowered_name.endswith("_test.py"):
         return "test"
@@ -64,6 +79,8 @@ def _classify(relative: Path) -> str:
         return "configuration"
     if relative.suffix.lower() in {".md", ".rst", ".txt"}:
         return "documentation"
+    if relative.suffix.lower() in DATA_SUFFIXES:
+        return "data"
     return "source"
 
 
@@ -101,8 +118,8 @@ def observe_repository(root: Path) -> dict[str, object]:
             path=relative.as_posix(),
             size=path.stat().st_size,
             sha256=_sha256(path),
-            classification=_classify(relative),
-            sensitive=_is_sensitive(relative),
+            classification=_classify(path, relative),
+            sensitive=_is_sensitive(path, relative),
         )
         files.append(record)
         if path.suffix.lower() == ".py" and not record.sensitive:
@@ -113,6 +130,7 @@ def observe_repository(root: Path) -> dict[str, object]:
     counts: dict[str, int] = {}
     for item in files:
         counts[item.classification] = counts.get(item.classification, 0) + 1
+    edges = sorted(set(edges), key=lambda edge: (edge.source, edge.target, edge.edge_type))
     return {
         "schema_version": 1,
         "repository_root": str(root),

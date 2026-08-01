@@ -99,12 +99,15 @@ def _derive_suggestions(
             (snapshot["id"],),
         ).fetchall()
     }
+    has_previous_snapshot = connection.execute(
+        "SELECT previous_snapshot_id FROM observer_snapshots WHERE id = ?", (snapshot["id"],)
+    ).fetchone()["previous_snapshot_id"] is not None
     for change_class, need_key, priority, problem in (
         ("security", "security.active-change-review", "CRITICAL", "Recent changes affect a security-classified boundary."),
         ("dependency", "dependency.change-review", "HIGH", "Recent dependency changes require compatibility and supply-chain review."),
         ("license", "license.change-review", "CRITICAL", "Recent license changes require an immediate policy-gate review."),
     ):
-        if change_counts.get(change_class, 0):
+        if has_previous_snapshot and change_counts.get(change_class, 0):
             suggestions.append(NeedSuggestion(
                 need_key=need_key,
                 priority=priority,
