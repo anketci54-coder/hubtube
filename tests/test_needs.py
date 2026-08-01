@@ -61,6 +61,14 @@ class NeedGraphTests(unittest.TestCase):
         second = propose_needs(self.connection, "demo")
         self.assertEqual([item["id"] for item in first], [item["id"] for item in second])
 
+    def test_initial_baseline_does_not_create_change_review_need(self):
+        (self.repo / "LICENSE").write_text("MIT\n", encoding="utf-8")
+        (self.repo / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
+        self._observe()
+        proposals = propose_needs(self.connection, "demo")
+        keys = {item["need_key"] for item in proposals}
+        self.assertNotIn("license.change-review", keys)
+
 
 if __name__ == "__main__":
     unittest.main()
