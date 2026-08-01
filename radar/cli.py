@@ -7,12 +7,12 @@ import tempfile
 from pathlib import Path
 
 from .core import connect, initialize, stable_hash, transition_candidate, utc_now
-from .observer import observe_repository, write_snapshot
+from .observer import observe_repository, persist_snapshot, write_snapshot
 from .report import render_daily_report
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-SCHEMA_PATH = PROJECT_ROOT / "schema" / "001_initial.sql"
+SCHEMA_PATH = PROJECT_ROOT / "schema"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -28,7 +28,9 @@ def build_parser() -> argparse.ArgumentParser:
     scan.add_argument("--config", type=Path, required=True)
     observe = sub.add_parser("observe")
     observe.add_argument("repository", type=Path)
-    observe.add_argument("--output", type=Path, required=True)
+    observe.add_argument("--output", type=Path)
+    observe.add_argument("--repo-key")
+    observe.add_argument("--full-name")
     return parser
 
 
@@ -99,10 +101,22 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     if args.command == "observe":
         snapshot = observe_repository(args.repository)
-        write_snapshot(snapshot, args.output)
-        print(f"SNAPSHOT_WRITTEN={args.output}")
+        if args.output:
+            write_snapshot(snapshot, args.output)
+            print(f"SNAPSHOT_WRITTEN={args.output}")
+        connection = connect(args.db)
+        initialize(connection, SCHEMA_PATH)
+        result = persist_snapshot(
+            connection,
+            repo_key=args.repo_key or args.repository.resolve().name,
+            full_name=args.full_name or args.repository.resolve().name,
+            snapshot=snapshot,
+        )
         print(f"FILES_OBSERVED={snapshot['file_count']}")
         print(f"SNAPSHOT_HASH={snapshot['snapshot_hash']}")
+        print(f"REPO_CHANGED={str(result['changed']).lower()}")
+        print(f"CHANGES={len(result['changes'])}")
+        print(f"IMPACTED_CONTEXT={len(result['impacted_context'])}")
         return 0
 
     connection = connect(args.db)

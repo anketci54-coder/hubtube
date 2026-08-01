@@ -24,7 +24,9 @@ def connect(db_path: Path) -> sqlite3.Connection:
 
 
 def initialize(connection: sqlite3.Connection, schema_path: Path) -> None:
-    connection.executescript(schema_path.read_text(encoding="utf-8"))
+    paths = sorted(schema_path.glob("*.sql")) if schema_path.is_dir() else [schema_path]
+    for path in paths:
+        connection.executescript(path.read_text(encoding="utf-8"))
 
 
 def transition_candidate(
@@ -73,4 +75,3 @@ def transition_candidate(
             (job_key, candidate_id, operation_type, input_version, worker_version, result_ref, now),
         )
     return True
-

@@ -23,12 +23,17 @@ Python 3.11 veya üzeri yeterlidir; harici paket gerekmez.
 python -m radar --db work/radar.db init
 python -m radar --db work/radar.db self-test
 python -m radar --db work/radar.db report --date 2026-08-01 --output work/daily-report.md
-python -m radar observe C:\path\to\repository --output work\snapshot.json
+python -m radar --db work\radar.db observe C:\path\to\repository `
+  --repo-key tokenoskobi --full-name anketci54-coder/tokenoskobi `
+  --output work\snapshot.json
 ```
 
-Observer yalnız dosya okur; kod çalıştırmaz ve paket kurmaz. `.git`, sanal ortamlar,
+Observer yalnız dosya okur; kod çalıştırmaz ve paket kurmaz. `.git`, `work/`, sanal ortamlar,
 `node_modules` ve cache dizinlerini atlar. Dosya hash'leri, sınıflandırma, hassas dosya
 işaretleri ve Python import ilişkileri üretir. Hassas dosyaların içeriği çıktıya yazılmaz.
+Snapshot SQLite'a kaydedilir; sonraki çalışmada yalnız eklenen, değiştirilen veya silinen
+dosyalar sınıflandırılır ve bunlara bağlı etki bağlamı raporlanır. Aynı snapshot yeniden
+gözlemlenirse `REPO_CHANGED=false` üretilir.
 
 Gerçek GitHub taramasından önce `config.example.toml` dosyasını `config.toml` olarak
 kopyalayın ve iki repository değerini doldurun. Token gerekiyorsa yalnız ortam
