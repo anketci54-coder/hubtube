@@ -1,0 +1,31 @@
+schema_version = 1
+
+[[repositories]]
+key = "tokenoskobi"
+github = "OWNER/TOKENOSKOBI"
+read_only = true
+
+[[repositories]]
+key = "quant-simulator"
+github = "OWNER/QUANT-SIMULATOR"
+read_only = true
+
+[discovery]
+overlap_hours = 48
+maximum_candidates_per_need = 100
+minimum_last_activity_date = "2023-01-01"
+include_archived = false
+
+[budget]
+metadata_items = 1000
+source_code_deep_analyses = 10
+ai_analysis_tokens = 500000
+overflow_policy = "carry_forward"
+
+[security]
+run_untrusted_code = false
+install_discovered_packages = false
+allow_repository_writes = false
+allow_pull_requests = false
+allow_private_keys = false
+

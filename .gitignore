@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+
+# Local runtime state and generated reports
+work/
+*.db
+*.db-shm
+*.db-wal
+
+# Secrets and local configuration
+.env
+.env.*
+config.toml
+
+# Editor and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
