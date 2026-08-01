@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 
 from .core import connect, initialize, stable_hash, transition_candidate, utc_now
+from .observer import observe_repository, write_snapshot
 from .report import render_daily_report
 
 
@@ -25,6 +26,9 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--output", type=Path)
     scan = sub.add_parser("scan-github")
     scan.add_argument("--config", type=Path, required=True)
+    observe = sub.add_parser("observe")
+    observe.add_argument("repository", type=Path)
+    observe.add_argument("--output", type=Path, required=True)
     return parser
 
 
@@ -89,10 +93,17 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "scan-github":
         print(
-            "scan-github henüz etkin değil: doğrulanmış repo adresleri ve GitHub istemcisi gerekli.",
+            "scan-github henÃ¼z etkin deÄŸil: doÄŸrulanmÄ±ÅŸ repo adresleri ve GitHub istemcisi gerekli.",
             file=sys.stderr,
         )
         return 2
+    if args.command == "observe":
+        snapshot = observe_repository(args.repository)
+        write_snapshot(snapshot, args.output)
+        print(f"SNAPSHOT_WRITTEN={args.output}")
+        print(f"FILES_OBSERVED={snapshot['file_count']}")
+        print(f"SNAPSHOT_HASH={snapshot['snapshot_hash']}")
+        return 0
 
     connection = connect(args.db)
     if args.command == "init":
