@@ -21,7 +21,9 @@ class GitHubScanError(RuntimeError):
 
 def load_repositories(config_path: Path) -> list[dict[str, str]]:
     try:
-        config = tomllib.loads(config_path.read_text(encoding="utf-8"))
+        # Windows PowerShell writes a UTF-8 BOM by default. Accept it so a
+        # copied config.example.toml works with both PowerShell editions.
+        config = tomllib.loads(config_path.read_text(encoding="utf-8-sig"))
     except (OSError, tomllib.TOMLDecodeError) as exc:
         raise GitHubScanError(f"Yapılandırma okunamadı: {exc}") from exc
     repositories = config.get("repositories")

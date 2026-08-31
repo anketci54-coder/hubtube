@@ -15,6 +15,15 @@ class GitHubTests(unittest.TestCase):
             config.write_text('[[repositories]]\nkey="app"\ngithub="owner/repo"\nread_only=true\n', encoding="utf-8")
             self.assertEqual(load_repositories(config), [{"key": "app", "github": "owner/repo"}])
 
+    def test_loads_utf8_bom_config(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / "config.toml"
+            config.write_text(
+                '[[repositories]]\nkey="app"\ngithub="owner/repo"\nread_only=true\n',
+                encoding="utf-8-sig",
+            )
+            self.assertEqual(load_repositories(config), [{"key": "app", "github": "owner/repo"}])
+
     def test_rejects_non_read_only_repository(self):
         with tempfile.TemporaryDirectory() as directory:
             config = Path(directory) / "config.toml"
