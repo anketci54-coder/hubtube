@@ -58,8 +58,10 @@ $env:RADAR_GITHUB_TOKEN = "..."
 python -m radar --db work/radar.db scan-github --config config.toml
 ```
 
-`scan-github` bu başlangıç sürümünde bilinçli olarak devre dışıdır; repo adresleri
-doğrulandıktan sonra GitHub istemcisi eklenmelidir. Hiçbir komut hedef repolara yazmaz.
+`scan-github`, yapılandırılan repository'lerin varsayılan branch arşivlerini GitHub'ın
+salt-okunur API uç noktasından indirir, geçici dizinde güvenli biçimde açar ve Observer
+snapshot'ını SQLite'a kaydeder. Özel repository'ler ve daha yüksek API kotası için
+`RADAR_GITHUB_TOKEN` gereklidir. Hiçbir komut hedef repolara yazmaz.
 
 ## Belgeler
 

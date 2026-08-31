@@ -11,6 +11,7 @@ from .core import connect, initialize, stable_hash, transition_candidate, utc_no
 from .observer import observe_repository, persist_snapshot, write_snapshot
 from .needs import approve_need_proposal, list_needs, propose_needs
 from .report import render_daily_report
+from .github import GitHubScanError, scan_github
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -105,11 +106,18 @@ def main(argv: list[str] | None = None) -> int:
         print("SELF_TEST=PASS")
         return 0
     if args.command == "scan-github":
-        print(
-            "scan-github henüz etkin değil: doğrulanmış repo adresleri ve GitHub istemcisi gerekli.",
-            file=sys.stderr,
-        )
-        return 2
+        connection = connect(args.db)
+        initialize(connection, SCHEMA_PATH)
+        try:
+            results = scan_github(connection, args.config)
+        except GitHubScanError as exc:
+            print(f"GITHUB_SCAN_ERROR={exc}", file=sys.stderr)
+            return 2
+        finally:
+            connection.close()
+        print(json.dumps(results, ensure_ascii=False, indent=2))
+        print(f"REPOSITORIES_SCANNED={len(results)}")
+        return 0
     if args.command == "observe":
         snapshot = observe_repository(args.repository)
         if args.output:
